@@ -2,7 +2,7 @@ import tornado.web
 import asyncio
 import tornado.ioloop
 import sqlite3
-
+import os
 
 
 
@@ -11,7 +11,7 @@ def get_db_connection():
     connection = sqlite3.connect("session.sql")
     cursor= connection.cursor()
     try:
-        cursor.execute("CREATE TABLE IF NOT EXISTS Users(id INTEGER PRIMARY KEY , Name TEXT, Tokens INTEGER DEFAULT 10), Api_Key TEXT ")
+        cursor.execute("CREATE TABLE IF NOT EXISTS Users(id INTEGER PRIMARY KEY, Name TEXT, Tokens INTEGER DEFAULT 10, ApiKey TEXT)")
         print("DATABASE INITIALIZED")
         return connection
     except Exception as e:
@@ -23,11 +23,11 @@ def get_db_connection():
 
 #subhandlers
 class BaseHander(tornado.web.RequestHandler):
-    def initialize(self, connection_object=None):
+    def initialize(self, conn_object=None):
         '''takes db connection object as init argument and assigns it as a member variable'''
-        if connection_object is None:
+        if conn_object is None:
             pass
-        self.db = connection_object
+        self.db = conn_object
 
 
     def make_query(self,statement,*args):
@@ -58,7 +58,16 @@ class BaseHander(tornado.web.RequestHandler):
 
                 
 class HomeHandler(BaseHander):
-    pass
+    def prepare(self):
+        pass
+
+
+    def get(self):
+        self.write("home")
+        results = self.make_query("select * from Users")
+        print(results.fetchall())
+
+        print(self.current_user)
 
 
 class LOGINHandler(BaseHander):
@@ -84,20 +93,31 @@ class CALLAPIhandler(BaseHander):
 
 def make_app(settings,db):
     return tornado.web.Application([
-        ("/",HomeHandler,dict(conn_object=db))
+        ("/",HomeHandler,dict(conn_object=db)),
         ("/login",LOGINHandler, dict(conn_object=db)),
-        ("/createacct",CREATEACCOUNTHandler, dict(conn_object=db))
-        ("/getkey",GETAPIKEYHandler,dict(conn_object=db))
+        ("/createacct",CREATEACCOUNTHandler, dict(conn_object=db)),
+        ("/getkey",GETAPIKEYHandler,dict(conn_object=db)),
         
-    ] *settings)
+    ] ,**settings)
 
 
 
 # main func
 async def main():
-    app = make_app({})
+    app = make_app({
+        "cookie_secret":"my-super-secret",
+        "debug":"true",
+        "template_path": os.path.join(os.path.dirname(__file__),"templates"),
+        "static_path":os.path.join(os.path.dirname(__file__),"static")
+
+    },get_db_connection())
+
     app.listen(8886)
-    print("server up on port 8886")
+    print("server up on port 8886 ...")
     await asyncio.Event().wait()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
 
 
