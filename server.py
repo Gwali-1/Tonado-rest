@@ -7,16 +7,28 @@ import sqlite3
 
 
 def get_db_connection():
+    '''create user table in database if not exist and returns connection object '''
     connection = sqlite3.connect("session.sql")
     cursor= connection.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS Users(id INTEGER PRIMARY KEY , Name TEXT, Tokens INTEGER DEFAULT 10), Api_Key TEXT ")
-    cursor.close()
-    return connection
+    try:
+        cursor.execute("CREATE TABLE IF NOT EXISTS Users(id INTEGER PRIMARY KEY , Name TEXT, Tokens INTEGER DEFAULT 10), Api_Key TEXT ")
+        print("DATABASE INITIALIZED")
+        return connection
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
 
 
 
 #subhandlers
 class BaseHander(tornado.web.RequestHandler):
+    def initialize(self, connection_object=None):
+        '''takes db connection object as init argument and assigns it as a member variable'''
+        if connection_object is None:
+            pass
+        self.db = connection_object
+
 
     def make_query(self,statement,*args):
         '''takes sql statement to excute and placeholder arguments to be inserted
@@ -45,20 +57,22 @@ class BaseHander(tornado.web.RequestHandler):
                 self.write(e)
 
                 
-
-
-class LOGINHandler(tornado.web.RequestHandler):
+class HomeHandler(BaseHander):
     pass
 
 
-class CREATEACCOUNTHandler(tornado.web.RequestHandler):
-    pass
-
-class GETAPIKEYHandler(tornado.web.RequestHandler):
+class LOGINHandler(BaseHander):
     pass
 
 
-class CALLAPIhandler(tornado.web.RequestHandler):
+class CREATEACCOUNTHandler(BaseHander):
+    pass
+
+class GETAPIKEYHandler(BaseHander):
+    pass
+
+
+class CALLAPIhandler(BaseHander):
     pass
 
 
@@ -68,16 +82,22 @@ class CALLAPIhandler(tornado.web.RequestHandler):
 
 #application object
 
-def make_app(settings):
+def make_app(settings,db):
     return tornado.web.Application([
+        ("/",HomeHandler,dict(conn_object=db))
+        ("/login",LOGINHandler, dict(conn_object=db)),
+        ("/createacct",CREATEACCOUNTHandler, dict(conn_object=db))
+        ("/getkey",GETAPIKEYHandler,dict(conn_object=db))
         
-
     ] *settings)
 
 
 
 # main func
 async def main():
-    pass
+    app = make_app({})
+    app.listen(8886)
+    print("server up on port 8886")
+    await asyncio.Event().wait()
 
 
