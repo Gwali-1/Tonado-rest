@@ -7,7 +7,7 @@ import sqlite3
 import os
 import bcrypt
 import uuid
-import json
+
 
 
 SALT = bcrypt.gensalt()
@@ -96,7 +96,7 @@ class BaseHander(tornado.web.RequestHandler):
                     self.redirect("/login")
                 self.current_user = result[0]
             except Exception as e:
-                self.write(e)
+                pass
 
 
 
@@ -126,7 +126,8 @@ class LOGINHandler(BaseHander):
         if user:
             if self.check_password_validity(password,user[0][2]):
                 self.set_secure_cookie("account_user",str(user[0][0]))
-                self.redirect("/")
+                return self.redirect("/")
+            
         self.render("login.html", message="Invalid  credientials")
         
 
