@@ -2,9 +2,12 @@
 %}
 
 <div class="border p-3">
-  {% if current_user %}
-  <p>wlecome</p>
-  {% else %}
+  {% if current_user %} {{current_user}} {% if not current_user[4] %}
+  <form action="/getkey" method="post">
+    {% module xsrf_form_html() %}
+    <button class="btn btn-success">Generate a key</button>
+  </form>
+  {% end %} {% else %}
   <div class="card mx-auto" style="width: 18rem">
     <img
       src="{{static_url('kanye-home.jpeg')}}"
