@@ -1,8 +1,10 @@
 import tornado.web
 import asyncio
 import tornado.ioloop
+import tornado.concurrent
 import sqlite3
 import os
+import time
 
 
 
@@ -34,9 +36,10 @@ class BaseHander(tornado.web.RequestHandler):
         '''takes sql statement to excute and placeholder arguments to be inserted
             executed asynchronously using torn
         '''
-        cursor = self.db.cursor()
+        connection = sqlite3.connect("session.sql")
+        cursor = connection.cursor()
         results = cursor.execute(statement,args)
-        return None if not results else results
+        return None if not results else results.fetchall()
         
     
 
@@ -62,13 +65,15 @@ class HomeHandler(BaseHander):
         pass
 
 
-    def get(self):
-        self.write("home")
-        results = self.make_query("select * from Users")
-        print(results.fetchall())
+    async def get(self):
+        result = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,"select * from Users")
+        # results = self.make_query("select * from Users")
+        # r = tornado.ioloop.IOLoop.run_in_executor(None,self.make_query,"select * from Users")
+        # results = await r
+        print(result)
 
-        print(self.current_user)
-
+        # print(self.current_user)
+  
 
 class LOGINHandler(BaseHander):
     pass
@@ -114,6 +119,7 @@ async def main():
 
     app.listen(8886)
     print("server up on port 8886 ...")
+
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
