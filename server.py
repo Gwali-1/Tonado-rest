@@ -111,6 +111,8 @@ class HomeHandler(BaseHander):
         
 
 
+
+
 class LOGINHandler(BaseHander):
 
     def get(self):
@@ -143,18 +145,22 @@ class CREATEACCOUNTHandler(BaseHander):
         name=self.get_argument("username")
         password = self.get_argument("password")
         password_hash = await tornado.ioloop.IOLoop.current().run_in_executor(None, self.generate_hash,password)
+        key = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.generate_api_key)
         if not password_hash:
             return self.write("error with hash")
-        query= "INSERT INTO Users(Name,Password) VALUES(?,?)"
+        query= "INSERT INTO Users(Name,Password,ApiKey) VALUES(?,?,?)"
         try:
-            await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,name,password_hash)
+            await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,name,password_hash,key)
             self.redirect("/login")
         except sqlite3.IntegrityError:
             self.render("create.html",message="username taken")
 
        
 
-class GETAPIKEYHandler(BaseHander):
+
+
+
+class GETAPIKEYHandler(BaseHander): #not used in app
     async def post(self):
         user = self.json_args["name"]
 
@@ -180,6 +186,8 @@ class GETAPIKEYHandler(BaseHander):
         
 
 
+
+
 class CALLAPIhandler(BaseHander):
     async def post(self):
         api_key = self.json_args["key"]
@@ -196,6 +204,8 @@ class CALLAPIhandler(BaseHander):
             self.set_status(400)
             return self.write({"error":"couldnt get quote"})
               
+
+
 
 
 

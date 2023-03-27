@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const genKey = document.querySelector(".generate-key-btn");
   const keyContent = document.querySelector(".key");
   const quote = document.querySelector(".quote");
+  const logout = document.querySelector(".logout");
   if (genKey) {
     keyContent.style.display = "none";
     genKey.onclick = () => {
@@ -23,4 +24,10 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch((err) => console.log(err));
     };
   }
+
+  logout.onclick = () => {
+    document.cookie =
+      "account_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    location.reload();
+  };
 });
