@@ -18,6 +18,7 @@ def get_db_connection():
     except Exception as e:
         print(e)
     finally:
+        connection.close()
         cursor.close()
 
 
@@ -46,6 +47,7 @@ class BaseHander(tornado.web.RequestHandler):
             raise e
         finally:
             connection.close()
+            cursor.close()
         
     
 
@@ -58,23 +60,25 @@ class BaseHander(tornado.web.RequestHandler):
         user_id = self.get_secure_cookie("account_user")
         if not user_id:
             self.redirect("/createAccount")
-            try:
-                self.current_user = await self.make_query("select * from Users where id = ?", int(user_id))
-                if self.current_user is None:
-                    self.redirect("/createAccount")
-            except Exception as e:
-                self.write(e)
+        try:
+            self.current_user = await self.make_query("select * from Users where id = ?", int(user_id))
+            if self.current_user is None:
+                self.redirect("/createAccount")
+        except Exception as e:
+            self.write(e)
 
                 
 class HomeHandler(BaseHander):
     def prepare(self):
+        '''allow all request to come throgh from users (accounts owners or not)'''
         pass
 
 
     async def get(self):
-        result = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,"insert into Users(Name,ApiKey) values(?,?)","john","kbdsdjb")
-        self.write("done")
-        print(result)
+        self.render("index.html")
+        # result = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,"insert into Users(Name,ApiKey) values(?,?)","john","kbdsdjb")
+        # self.write("done")
+        # print(result)
         
 
 class LOGINHandler(BaseHander):
