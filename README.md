@@ -1,3 +1,5 @@
+![alt text](/static/readme.png)
+
 # This is a demo web app that implements some of the features in the tonado web framework
 
 its a simple web app that has username and password authentication routes
