@@ -7,6 +7,7 @@ import sqlite3
 import os
 import bcrypt
 import uuid
+import json
 
 
 SALT = bcrypt.gensalt()
@@ -154,14 +155,13 @@ class CREATEACCOUNTHandler(BaseHander):
        
 
 class GETAPIKEYHandler(BaseHander):
-    @tornado.web.authenticated
     async def post(self):
-        user = self.current_user
+        user = self.json_args["name"]
         key = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.generate_api_key)
         try:
             query = "UPDATE Users SET ApiKey = ? WHERE id = ?"
-            await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,key,user[0])
-            return tornado.escape.json_encode({"key":key})
+            await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,key,user)
+            return self.write({"key":key})
         except Exception as e:
             print(e)
      
@@ -210,7 +210,6 @@ async def main():
         "template_path": os.path.join(os.path.dirname(__file__),"templates"),
         "static_path":os.path.join(os.path.dirname(__file__),"static"),
         "login_url": "/login",
-        "xsrf_cookies": True,
         "compiled_template_cache":False
 
     })

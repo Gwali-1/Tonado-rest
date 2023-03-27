@@ -3,10 +3,7 @@
 
 <div class="border p-3">
   {% if current_user %} {{current_user}} {% if not current_user[4] %}
-  <form action="/getkey" method="post">
-    {% module xsrf_form_html() %}
-    <button class="btn btn-success">Generate a key</button>
-  </form>
+  <button class="btn btn-success generate-key-btn">Generate a key</button>
   {% end %} {% else %}
   <div class="card mx-auto" style="width: 18rem">
     <img
