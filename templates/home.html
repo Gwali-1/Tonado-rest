@@ -1,10 +1,23 @@
 {% extends "layout.html" %} {% block title %} index {% end %} {% block content
 %}
 
-<div class="border p-3">
-  {% if current_user %} {{current_user}} {% if not current_user[4] %}
-  <button class="btn btn-success generate-key-btn">Generate a key</button>
-  {% end %} {% else %}
+<div class="p-3">
+  {% if current_user %}
+  <p class="key">{{current_user[4]}}</p>
+
+  <div class="card mx-auto" style="width: 18rem">
+    <img src="{{static_url('kanye.jpeg')}}" class="card-img-top" alt="..." />
+    <div class="card-body">
+      <button class="btn btn-dark generate-key-btn">Get kanye Code</button>
+    </div>
+  </div>
+  <p
+    class="display-5 quote fw-bolder border text-center mx-auto"
+    style="width: 50rem"
+  ></p>
+
+  {% else %}
+
   <div class="card mx-auto" style="width: 18rem">
     <img
       src="{{static_url('kanye-home.jpeg')}}"

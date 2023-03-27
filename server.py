@@ -157,13 +157,25 @@ class CREATEACCOUNTHandler(BaseHander):
 class GETAPIKEYHandler(BaseHander):
     async def post(self):
         user = self.json_args["name"]
+
+        query_statement = "SELECT * FROM Users WHERE Name = ?"
+        account = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query_statement,user)
+        if not account:
+            self.set_status(400)
+            return self.write({"error":"could not generate key"})
+        
         key = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.generate_api_key)
+
         try:
-            query = "UPDATE Users SET ApiKey = ? WHERE id = ?"
-            await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,key,user)
+            query = "UPDATE Users SET ApiKey = ? WHERE name = ?"
+            s= await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,key,user)
+            print(s)
+            self.set_status(200)
             return self.write({"key":key})
         except Exception as e:
             print(e)
+            self.set_status(400)
+            return self.write({"error":"could not generate key"})
      
         
 
@@ -171,17 +183,18 @@ class GETAPIKEYHandler(BaseHander):
 class CALLAPIhandler(BaseHander):
     async def post(self):
         api_key = self.json_args["key"]
-        user = self.current_user
+ 
         query = "SELECT name from Users WHERE ApiKey = ?"
-        result = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,api_key)
-        if result[0][0] != api_key:
-            pass
+        result = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,api_key)
+        if  not result:
+            self.set_status(400)
+            return self.write({"error":"invalid api key"})
         try:
             response = await self.get_kanye_quote()
-            return tornado.escape.json_encode(response)
+            return self.write({"quote":response})
         except:
-            return tornado.escape.json_encode({"error":"try again later"})
-
+            self.set_status(400)
+            return self.write({"error":"couldnt get quote"})
               
 
 
@@ -195,6 +208,7 @@ def make_app(settings,db=None):
         ("/login",LOGINHandler, dict(conn_object=db)),
         ("/createacct",CREATEACCOUNTHandler, dict(conn_object=db)),
         ("/getkey",GETAPIKEYHandler,dict(conn_object=db)),
+        ("/getquote",CALLAPIhandler)
         
     ] ,**settings)
 
