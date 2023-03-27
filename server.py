@@ -15,7 +15,6 @@ def get_db_connection():
     try:
         cursor.execute("CREATE TABLE IF NOT EXISTS Users(id INTEGER PRIMARY KEY, Name TEXT, Tokens INTEGER DEFAULT 10, ApiKey TEXT)")
         print("DATABASE INITIALIZED")
-        return connection
     except Exception as e:
         print(e)
     finally:
@@ -38,8 +37,15 @@ class BaseHander(tornado.web.RequestHandler):
         '''
         connection = sqlite3.connect("session.sql")
         cursor = connection.cursor()
-        results = cursor.execute(statement,args)
-        return None if not results else results.fetchall()
+        try:
+            results = cursor.execute(statement,args)
+            connection.commit()
+            return None if not results else results.fetchall()
+        except Exception as e:
+            connection.rollback()
+            raise e
+        finally:
+            connection.close()
         
     
 
@@ -66,14 +72,10 @@ class HomeHandler(BaseHander):
 
 
     async def get(self):
-        result = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,"select * from Users")
-        # results = self.make_query("select * from Users")
-        # r = tornado.ioloop.IOLoop.run_in_executor(None,self.make_query,"select * from Users")
-        # results = await r
+        result = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,"insert into Users(Name,ApiKey) values(?,?)","john","kbdsdjb")
+        self.write("done")
         print(result)
-
-        # print(self.current_user)
-  
+        
 
 class LOGINHandler(BaseHander):
     pass
@@ -104,6 +106,8 @@ def make_app(settings,db):
         ("/getkey",GETAPIKEYHandler,dict(conn_object=db)),
         
     ] ,**settings)
+
+
 
 
 
