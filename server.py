@@ -58,7 +58,7 @@ class BaseHander(tornado.web.RequestHandler):
             return False
         
     def check_password_validity(self,raw_input,hash_input):
-        return True if self.generate_hash(raw_input) == hash_input else False
+        return  bcrypt.checkpw(raw_input.encode("utf-8"),hash_input)
 
 
     async def prepare(self):
@@ -68,14 +68,16 @@ class BaseHander(tornado.web.RequestHandler):
             hence using the prepare method instead to get user 
         '''
         user_id = self.get_secure_cookie("account_user")
-        if not user_id:
-            self.redirect("/createAccount")
-        try:
-            self.current_user = await self.make_query("select * from Users where id = ?", int(user_id))
-            if self.current_user is None:
-                self.redirect("/createAccount")
-        except Exception as e:
-            self.write(e)
+        if user_id:
+            try:
+                query = "select * from Users where id = ?"
+                result = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,query,int(user_id))
+                print(result)
+                if result is None:
+                    self.redirect("/login")
+                self.current_user = result[0]
+            except Exception as e:
+                self.write(e)
 
 
 
@@ -83,21 +85,13 @@ class BaseHander(tornado.web.RequestHandler):
 
                 
 class HomeHandler(BaseHander):
-    def prepare(self):
-        '''allow all request to come throgh from users (accounts owners or not)'''
-        pass
-
     async def get(self):
         self.render("home.html")
-        # result = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,"insert into Users(Name,ApiKey) values(?,?)","john","kbdsdjb")
-        # self.write("done")
-        # print(result)
+
         
 
 
 class LOGINHandler(BaseHander):
-    def prepare(self):
-        pass
 
     def get(self):
         self.render("login.html")
@@ -105,23 +99,19 @@ class LOGINHandler(BaseHander):
     async def post(self):
         name=self.get_argument("username")
         password = self.get_argument("password")
-        query = "SELECT Name, Password FROM Users Where name = ?"
-        user = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,query,name)
+        query = "SELECT id, Name, Password FROM Users Where name = ?"
+        user = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,query,name) #returns a tuple in a list as result -->[(result)]
         if user:
-            if self.check_password_validity(password,user[0][1]):
-                self.set_secure_cookie("account_user",user[0][0])
+            if self.check_password_validity(password,user[0][2]):
+                self.set_secure_cookie("account_user",str(user[0][0]))
                 self.redirect("/")
-        
-        self.write("invalid logging details")
 
 
 
 class CREATEACCOUNTHandler(BaseHander):
-    def prepare(self):
-        pass
 
     def get(self):
-        self.render("create.html")
+        self.render("create.html",message="")
 
     async def post(self):
         name=self.get_argument("username")
@@ -130,8 +120,11 @@ class CREATEACCOUNTHandler(BaseHander):
         if not password_hash:
             return self.write("error with hash")
         query= "INSERT INTO Users(Name,Password) VALUES(?,?)"
-        await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,query,name,password_hash)
-        self.redirect("/login")
+        try:
+            await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,query,name,password_hash)
+            self.redirect("/login")
+        except sqlite3.IntegrityError:
+            self.render("create.html",message="username taken")
 
        
 
