@@ -7,6 +7,7 @@ import os
 import bcrypt
 
 
+SALT = bcrypt.gensalt()
 
 def get_db_connection():
     '''create user table in database if not exist and returns connection object '''
@@ -51,7 +52,7 @@ class BaseHander(tornado.web.RequestHandler):
 
     def generate_hash(self,input):
         try:
-            return bcrypt.hashpw(input.encode("utf-8"), bcrypt.gensalt())
+            return bcrypt.hashpw(input.encode("utf-8"), SALT )
         except Exception as e:
             print(e)
             return False
@@ -104,15 +105,14 @@ class LOGINHandler(BaseHander):
     async def post(self):
         name=self.get_argument("username")
         password = self.get_argument("password")
-        self.write(name+" -"+password)
-        # query = "SELECT Name, Password FROM Users Where name = ?"
-        # user = await tornado.ioloop.IOLoop.current().run_in_executor(None,query,name)
-        # if user:
-        #     if self.check_password_validity(password,user[0][1]):
-        #         self.set_secure_cookie("account_user",user[0][0])
-        #         self.redirect("/")
+        query = "SELECT Name, Password FROM Users Where name = ?"
+        user = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,query,name)
+        if user:
+            if self.check_password_validity(password,user[0][1]):
+                self.set_secure_cookie("account_user",user[0][0])
+                self.redirect("/")
         
-        # self.write("invalid logging details")
+        self.write("invalid logging details")
 
 
 
@@ -123,10 +123,17 @@ class CREATEACCOUNTHandler(BaseHander):
     def get(self):
         self.render("create.html")
 
-    def post(self):
+    async def post(self):
         name=self.get_argument("username")
         password = self.get_argument("password")
-        self.write(name+" -"+password)
+        password_hash = await tornado.ioloop.IOLoop.current().run_in_executor(None, self.generate_hash,password)
+        if not password_hash:
+            return self.write("error with hash")
+        query= "INSERT INTO Users(Name,Password) VALUES(?,?)"
+        await tornado.ioloop.IOLoop.current().run_in_executor(None,self.make_query,query,name,password_hash)
+        self.redirect("/login")
+
+       
 
 class GETAPIKEYHandler(BaseHander):
     pass
