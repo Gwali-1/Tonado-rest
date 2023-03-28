@@ -1,11 +1,11 @@
 ![alt text](/static/readme.png)
 
-# This is a demo web app that implements some of the features in the tonado web framework
+# This is a demo web app implemented with some of the features in the tonado as a web framework
 
 Its a simple web app that has username and password authentication routes
-and endpoints that asynchronously query an external API
+and an endpoint that that asynchronously query an external API
 
-others tonado features show cased here inclue
+_others tonado features showcased/ used in this demo include_
 
 - The templating language
 - Applying application confguration settings
