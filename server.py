@@ -1,4 +1,5 @@
 import tornado.web
+import tornado.gen
 import asyncio
 import tornado.ioloop
 import tornado.concurrent
@@ -7,6 +8,7 @@ import sqlite3
 import os
 import bcrypt
 import uuid
+import time
 
 
 
@@ -106,6 +108,8 @@ class BaseHander(tornado.web.RequestHandler):
 class HomeHandler(BaseHander):
     async def get(self):
         self.render("home.html")
+       
+        
 
 
         
@@ -122,7 +126,7 @@ class LOGINHandler(BaseHander):
         name=self.get_argument("username")
         password = self.get_argument("password")
         query = "SELECT id, Name, Password FROM Users Where name = ?"
-        user = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,name) #returns a tuple in a list as result -->[(result)]
+        user = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,name) #returns  a list as result -->[(result)]
         if user:
             if self.check_password_validity(password,user[0][2]):
                 self.set_secure_cookie("account_user",str(user[0][0]))
@@ -131,6 +135,12 @@ class LOGINHandler(BaseHander):
         self.render("login.html", message="Invalid  credientials")
         
 
+# class TestHandler(tornado.web.RequestHandler):
+#      def get(self):
+#         print("hello")
+#         time.sleep(6)
+#         print(f"done with{self.request} ")
+        
 
 
 
@@ -148,7 +158,7 @@ class CREATEACCOUNTHandler(BaseHander):
         password_hash = await tornado.ioloop.IOLoop.current().run_in_executor(None, self.generate_hash,password)
         key = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.generate_api_key)
         if not password_hash:
-            return self.write("error with hash")
+            return self.write("error with hash") #could be error page or redirect
         query= "INSERT INTO Users(Name,Password,ApiKey) VALUES(?,?,?)"
         try:
             await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,name,password_hash,key)
@@ -172,7 +182,6 @@ class GETAPIKEYHandler(BaseHander): #not used in app
             return self.write({"error":"could not generate key"})
         
         key = await tornado.ioloop.IOLoop.current().run_in_executor(None,self.generate_api_key)
-
         try:
             query = "UPDATE Users SET ApiKey = ? WHERE name = ?"
             s= await tornado.ioloop.IOLoop.current().run_in_executor(None,self.execute_query,query,key,user)
@@ -220,6 +229,7 @@ def make_app(settings,db=None):
         ("/createacct",CREATEACCOUNTHandler, dict(conn_object=db)),
         ("/getkey",GETAPIKEYHandler,dict(conn_object=db)),
         ("/getquote",CALLAPIhandler)
+        
         
     ] ,**settings)
 
