@@ -67,6 +67,8 @@ class BaseHander(tornado.web.RequestHandler):
     def generate_api_key(self):
         return str(uuid.uuid4())
 
+
+
     async def get_kanye_quote(self):
         client = tornado.httpclient.AsyncHTTPClient()
         try:
@@ -74,6 +76,8 @@ class BaseHander(tornado.web.RequestHandler):
             return tornado.escape.json_decode(respone.body)
         except Exception as e:
             raise e
+
+
 
     async def prepare(self):
         '''
@@ -102,9 +106,6 @@ class BaseHander(tornado.web.RequestHandler):
 
 
 
-
-
-
                 
 class HomeHandler(BaseHander):
     async def get(self):
@@ -113,11 +114,7 @@ class HomeHandler(BaseHander):
         
 
 
-        
-
-
-
-
+    
 class LOGINHandler(BaseHander):
 
     def get(self):
@@ -145,9 +142,6 @@ class LOGINHandler(BaseHander):
 
 
 
-
-
-
 class CREATEACCOUNTHandler(BaseHander):
 
     def get(self):
@@ -168,7 +162,6 @@ class CREATEACCOUNTHandler(BaseHander):
             self.render("create.html",message="username taken")
 
        
-
 
 
 
@@ -215,10 +208,6 @@ class CALLAPIhandler(BaseHander):
             self.set_status(400)
             return self.write({"error":"couldnt get quote"})
               
-
-
-
-
 
 
 
