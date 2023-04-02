@@ -11,6 +11,8 @@ import uuid
 import time
 
 
+
+
 SALT = bcrypt.gensalt()
 
 def get_db_connection():
