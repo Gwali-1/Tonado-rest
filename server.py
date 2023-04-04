@@ -11,10 +11,6 @@ import uuid
 import time
 
 
-
-
-
-
 SALT = bcrypt.gensalt()
 
 def get_db_connection():
@@ -63,13 +59,18 @@ class BaseHander(tornado.web.RequestHandler):
         except Exception as e:
             print(e)
             return False
-        
+
+
+
     def check_password_validity(self,raw_input,hash_input):
         return  bcrypt.checkpw(raw_input.encode("utf-8"),hash_input)
 
 
+
+
     def generate_api_key(self):
         return str(uuid.uuid4())
+
 
 
 
@@ -80,6 +81,7 @@ class BaseHander(tornado.web.RequestHandler):
             return tornado.escape.json_decode(respone.body)
         except Exception as e:
             raise e
+
 
 
 
@@ -250,6 +252,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
+ 
 
 
